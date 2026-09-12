@@ -23,7 +23,14 @@ public class ValheimPlugin : GamePluginBase, IWorkshopPlugin, IA2SQueryPlugin
     protected override bool FilterUnityShaderNoise => true;
 
     public string A2SHost => "127.0.0.1";
-    public int GetA2SPort(Models.GameServer server) => server.QueryPort > 0 ? server.QueryPort : DefaultQueryPort;
+
+    // Valheim has no -queryport (or any) command-line flag to control this — confirmed against
+    // the Valheim Wiki's dedicated server docs, and by BuildStartArguments above never passing
+    // one. The server always answers A2S on ServerPort+1, full stop. Querying the user-editable
+    // "Query Port" setting instead only works when that field happens to equal ServerPort+1 — a
+    // real community bug (SkOODaT, Discord, 12.9.2026): a server with a mismatched Query Port
+    // silently always reported 0 players, which fed straight into "shut down when empty".
+    public int GetA2SPort(Models.GameServer server) => server.ServerPort + 1;
 
     public override string? ValidateBeforeStart(GameServer server)
         => string.IsNullOrEmpty(server.ServerPassword) || server.ServerPassword.Length < 5
